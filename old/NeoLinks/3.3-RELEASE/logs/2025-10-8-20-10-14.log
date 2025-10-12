@@ -1,0 +1,28 @@
+[2025.10.08 20:10:14]  [INFO] [HOST-CLIENT] 使用zh-ch作为备选语言
+[2025.10.08 20:10:14]  [INFO] [HOST-CLIENT] 
+   _____                                     
+  / ____|                                    
+ | |        ___   _ __    ___   __  __   ___ 
+ | |       / _ \ | '__|  / _ \  \ \/ /  / _ \
+ | |____  |  __/ | |    | (_) |  >  <  |  __/
+  \_____|  \___| |_|     \___/  /_/\_\  \___|
+                                             
+                                             
+[2025.10.08 20:10:14]  [INFO] [HOST-CLIENT] 如果你已经开始使用的本软件，说明你已经知晓并同意了本软件的eula协议
+[2025.10.08 20:10:14]  [INFO] [HOST-CLIENT] 版本 ： 3.3-RELEASE
+[2025.10.08 20:10:14]  [INFO] [HOST-CLIENT] 请输入序列号：[2025.10.08 20:10:43]  [INFO] [HOST-CLIENT] 连接 proxy.ceroxe.fun ...
+[2025.10.08 20:10:43]  [INFO] [SERVER] 服务器连接成功 64ms
+[2025.10.08 20:10:43]  [INFO] [HOST-CLIENT] 请输入你想进行内网穿透的内网端口：[2025.10.08 20:10:47]  [WARNING] [SERVER] 这个序列号有 9999.999962806702 MB 流量可以消耗。
+[2025.10.08 20:10:47]  [INFO] [HOST-CLIENT] 有效期至：2025/10/20-12:00
+[2025.10.08 20:10:47]  [WARNING] [SERVER] 使用链接地址： proxy.ceroxe.fun:56002 来从公网连接。
+[2025.10.08 20:10:56]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:10:57]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:10:59]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:00]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:01]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:02]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:03]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:04]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:05]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:06]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201
+[2025.10.08 20:11:12]  [ERROR] [HOST-CLIENT] 连接本地地址失败：localhost:23201

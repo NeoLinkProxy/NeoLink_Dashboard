@@ -1,0 +1,20 @@
+[project]
+name = "neolink-kingda"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pygame>=2.6.1",
+    "pywinstyles>=1.8",
+    "pyyaml>=6.0.3",
+    "requests>=2.32.5",
+    "rich>=14.1.0",
+    "tkintertools>=3.0.0",
+    "tqdm>=4.67.1",
+]
+
+[dependency-groups]
+build = [
+    "pyinstaller>=6.16.0",
+]

@@ -2,6 +2,7 @@ import os
 import subprocess
 import pathlib
 
+
 # 获取当前工作目录
 # cwd = os.getcwd()
 folder = pathlib.Path(__file__).parent.resolve()
@@ -58,25 +59,18 @@ def exit_():
     # 修复1: 处理所有进程，而不是 len(psplist) - 1 个
     while psplist:  # 使用 while 循环处理所有进程
         psp = psplist.pop(0)
-        os.system(f'taskkill /PID {psp.pid} /F')
-        # try:
-        #     # 关闭 stdin 以防止进一步写入
-        #     if psp.stdin:
-        #         psp.stdin.close()
-            
-        #     # 给一点时间
-        #     time.sleep(0.5)
-            
-        #     # 尝试优雅地等待进程结束
-        #     psp.wait(timeout=2)
-        # except subprocess.TimeoutExpired:
-        #     # 如果进程仍未退出，则强制终止
-        #     try:
-        #         psp.terminate()  # 发送终止信号
-        #         psp.wait(timeout=2)  # 再次等待
-        #     except subprocess.TimeoutExpired:
-        #         psp.kill()  # 最后强制杀死进程
-        #         psp.wait()  # 确保进程资源被清理
+        # 强制停止 psp 正在执行的命令
+        try:
+            # 尝试终止进程
+            psp.terminate()
+            # 等待进程结束
+            psp.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            # 如果进程在5秒内未结束，则强制杀死
+            psp.kill()
+        except Exception:
+            # 忽略其他异常，确保继续处理下一个进程
+            pass
 
 send_command(ps_process1, f'cd "{folder}\\NeoLink_Dashboard_frontend"')
 send_command(ps_process1, f'pnpm run dev')

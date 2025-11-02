@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+src/SV_CanNoPatch/CanNoPatch.py
+src/SV_CanNoPatch/__init__.py
+src/sv_cannopatch.egg-info/PKG-INFO
+src/sv_cannopatch.egg-info/SOURCES.txt
+src/sv_cannopatch.egg-info/dependency_links.txt
+src/sv_cannopatch.egg-info/requires.txt
+src/sv_cannopatch.egg-info/top_level.txt

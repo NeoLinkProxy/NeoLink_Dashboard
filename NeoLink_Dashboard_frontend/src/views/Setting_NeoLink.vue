@@ -4,10 +4,10 @@ import { ref, onMounted } from 'vue'
 import Edition_logs from '../components/Edition_logs.vue';
 import { RouterLink } from 'vue-router';
 
-var errorinfo = ref('错误信息：\n')
-var info = ref(' 一些信息')
-var version = ref<string>('')
-var EL = ref<string>('')
+const errorinfo = ref('错误信息：\n')
+const info = ref(' 一些信息')
+const version = ref<string>('')
+const EL = ref<string>('')
 
 // 添加NLVersion响应式变量
 const NLVersion = ref<string>('')
@@ -102,9 +102,9 @@ const get_EL = async () => {
         'Content-Type': 'application/json',
       },
     })
-    
+
     const data = await response.json()
-    
+
     if (response.ok) {
       EL.value = data.Edition_logs
     } else {
@@ -118,6 +118,9 @@ const get_EL = async () => {
           break;
         case 1003:
           errorMessage = '请求的资源不存在';
+          break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
           break;
         case 500:
           errorMessage = '服务器发生错误';
@@ -163,6 +166,9 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
         case 1003:
           errorMessage = '请求的资源不存在';
           break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
         case 500:
           errorMessage = '服务器发生错误';
           break;
@@ -182,6 +188,7 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
 }
 
 onMounted(async () => {
+  window.appState?.GetIsChinaUser()
   get_EL();
   get_version();
   get_NLVersion();

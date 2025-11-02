@@ -46,7 +46,7 @@ body {
     background-color: #181818;
     margin: 0;
     min-height: 100vh;
-    font-family: 'SmileySans';
+    font-family: 'SmileySans-Oblique';
 }
  
 .stan {

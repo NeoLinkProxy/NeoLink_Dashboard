@@ -3,11 +3,9 @@
 import { ref, onMounted } from 'vue'
 import Edition_logs from '../components/Edition_logs.vue';
 import { RouterLink } from 'vue-router';
+import { ReportError } from '../tools/tools.ts'
 
-var errorinfo = ref('错误信息：\n')
-var info = ref(' 一些信息')
-var version = ref<string>('')
-var EL = ref<string>('')
+const EL = ref<string>('')
 
 // 添加NLVersion响应式变量
 const NLVersion = ref<string>('')
@@ -15,7 +13,7 @@ const NLVersion = ref<string>('')
 // 添加获取NLVersion的方法
 const get_NLVersion = async () => {
   try {
-    info.value = ' 正在获取NL版本'
+    window.appState?.updateInfo(' 正在获取NL版本')
     const response = await fetch('http://localhost:23104/GetNowUseNLV/', {
       method: 'GET',
       headers: {
@@ -25,74 +23,19 @@ const get_NLVersion = async () => {
     const data = await response.json()
     if (response.ok) {
       NLVersion.value = data.version || '未知版本'
-      info.value = ' 获取NL版本成功'
+      window.appState?.updateInfo(' 获取NL版本成功')
     } else {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `获取NL版本失败: ${error.message}。\n`
+      window.appState?.appendErrorInfo(`获取NL版本失败: ${error.message}。\n`)
     } else {
-      errorinfo.value += `获取NL版本失败: 未知错误。\n`
+      window.appState?.appendErrorInfo(`获取NL版本失败: 未知错误。\n`)
     }
     ReportError(error);
   }
 }
-
-const get_version = async () => {
-  try {
-    info.value = ' 正在获取版本'
-    const response = await fetch('http://localhost:23104/version', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    const data = await response.json()
-    if (response.ok) {
-      version.value = data.version
-    } else {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-  } catch (error: unknown) {
-    // 类型检查
-    if (error instanceof Error) {
-      errorinfo.value += `获取版本失败: ${error.message}。\n`
-    } else {
-      errorinfo.value += `获取版本失败: 未知错误。\n`
-    }
-    ReportError(error);
-  }
-}
-
-const ReportError = async (error_: any) => {
-  try {
-    alert(`发生错误，上报错误中：${error_}`)
-    const response = await fetch('http://localhost:23104/error', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: error_.message,
-        stack: error_.stack,
-        name: error_.name,
-        timestamp: new Date().toISOString()
-      }),
-    });
-  } catch (error: unknown) {
-    // 类型检查
-    if (error instanceof Error) {
-      errorinfo.value += `上报错误失败: ${error.message}。请复制内容并联系管理员\n`
-      errorinfo.value += `详细错误: ${error_.message} ${error_.stack} ${error_.name} ${error_.message} ${error_.stack} ${error_.name}\n`;
-    } else {
-      errorinfo.value += `上报错误失败: 未知错误。请复制内容并联系管理员`
-      errorinfo.value += `详细错误: 未知错误 ${error_.message} ${error_.stack} ${error_.name} ${error_.message} ${error_.stack} ${error_.name}\n`;
-    }
-    // console.error('详细错误:', error, error_);
-  }
-}
-
 
 const get_EL = async () => {
   try {
@@ -102,9 +45,9 @@ const get_EL = async () => {
         'Content-Type': 'application/json',
       },
     })
-    
+
     const data = await response.json()
-    
+
     if (response.ok) {
       EL.value = data.Edition_logs
     } else {
@@ -119,6 +62,9 @@ const get_EL = async () => {
         case 1003:
           errorMessage = '请求的资源不存在';
           break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
         case 500:
           errorMessage = '服务器发生错误';
           break;
@@ -129,9 +75,9 @@ const get_EL = async () => {
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `获取版本日志失败: ${error.message}。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`获取版本日志失败: ${error.message}。等待上报错误。\n`)
     } else {
-      errorinfo.value += `获取版本日志失败: 未知错误。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`获取版本日志失败: 未知错误。等待上报错误。\n`)
     }
     ReportError(error);
   }
@@ -163,6 +109,9 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
         case 1003:
           errorMessage = '请求的资源不存在';
           break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
         case 500:
           errorMessage = '服务器发生错误';
           break;
@@ -173,17 +122,17 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `发送弹窗失败: ${error.message}。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`发送弹窗失败: ${error.message}。等待上报错误。\n`)
     } else {
-      errorinfo.value += `发送弹窗失败: 未知错误。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`发送弹窗失败: 未知错误。等待上报错误。\n`)
     }
     ReportError(error);
   }
 }
 
 onMounted(async () => {
+  window.appState?.GetIsChinaUser()
   get_EL();
-  get_version();
   get_NLVersion();
 })
 
@@ -192,7 +141,7 @@ onMounted(async () => {
 <!-- template and style sections remain unchanged -->
 
 <template>
-  
+
   <div class="main-content">
     <div class="launch-section">
       <div class="launch-box">
@@ -537,7 +486,7 @@ onMounted(async () => {
   border: 1px solid #585858;
   background-color: #181818;
   min-width: 200px;
-  border-radius: 23%;
+  border-radius: 23px;
 }
 
 .launch-text {
@@ -578,7 +527,7 @@ onMounted(async () => {
   border: 1px solid #585858;
   background-color: #181818;
   min-width: 150px;
-  border-radius: 23%;
+  border-radius: 23px;
 }
 
 .box-title {

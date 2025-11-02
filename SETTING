@@ -1,0 +1,30 @@
+Path.yaml # NeoLink 下载路径 的 设置
+path_type: 'default' | 'data' | 'custom'
+path: None | None | str
+
+SFSP_{name}.yaml # 快速打开某个 NeoLink 的 配置 （ NeoLink 是这个文件所在文件夹下的 NeoLink.exe ）
+key: str
+OF: '{path}/log.log'
+LP int
+# --en-us / --zh-ch                   指定语言
+# `--nogui`                           禁用 JavaFX GUI 启动
+# `--gui`                             使用 JavaFX GUI 启动 （默认启用）
+
+Setting.yaml # 全局设置
+lang: 'zh-cn'
+theme: 'dark'
+autoUpdateCheck: bool
+NeoLinkAutoUpdate: bool # 全局
+
+Setting_NeoLink.yaml # NeoLink 的 全局设置
+
+
+NeoLink_Setting.yaml # 每个 NeoLink 的 单独设置
+UseOfficialConfig: bool # 覆盖 UseConfig
+UseConfig: bool 
+NeoLinkAutoUpdate: bool # 非全局
+# 每个 NeoLink 的单独设置
+use_official_config: false   # 使用官方配置（优先级最高）
+use_custom_config: false     # 使用自定义配置
+auto_update: true            # 该 NeoLink 实例自动更新
+config_priority: 'official'  # 配置优先级: 'official' > 'golbal' > 'local'

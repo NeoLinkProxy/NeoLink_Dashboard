@@ -1,0 +1,1 @@
+from SV_CanNoPatch.CanNoPatch import VersionCanNoPatch

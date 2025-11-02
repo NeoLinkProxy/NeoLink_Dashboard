@@ -1,0 +1,13 @@
+[project]
+name = "SV_CanNoPatch"
+version = "0.1.0"
+description = "为了解决 SV 没有 可以不带 Patch 的版本 做出来的 包"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "semantic-version>=2.10.0",
+]
+
+[build-system]
+requires = ['hatchling']
+build-backend = 'hatchling.build'

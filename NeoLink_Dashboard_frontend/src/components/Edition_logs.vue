@@ -94,7 +94,7 @@ const handleClickOutside = (event: MouseEvent) => {
   white-space: pre-wrap;
   word-wrap: break-word;
   color: #fff;
-  font-family: 'SarasaMonoSC', monospace;
+  font-family: 'SarasaMonoSC-ExtraLightItalic', monospace;
 }
 
 .btn {

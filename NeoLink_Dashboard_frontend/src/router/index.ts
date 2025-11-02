@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import home from '../views/Home.vue'
+import index from '../views/index.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,6 +9,11 @@ const router = createRouter({
       path: '/Home',
       name: 'home',
       component: home,
+    },
+    {
+      path: '/',
+      name: 'index',
+      component: index,
     },
     {
       path: '/Setting',
@@ -29,6 +35,16 @@ const router = createRouter({
       name: 'Download',
       component: () => import('../views/Download.vue')
     },
+    {
+      path: '/UAAD',
+      name: 'UAAD',
+      component: () => import('../views/UserAgreementAndDisclaimer.vue')
+    },
+    // {
+    //   path: '/Check',
+    //   name: 'Check',
+    //   component: () => import('../views/Check.vue')
+    // },
   ],
 })
 

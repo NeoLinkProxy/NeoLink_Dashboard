@@ -1,60 +1,99 @@
 <script setup lang="ts">
 import './assets/main.css'
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed, reactive } from 'vue'
+import { useRouter, useRoute  } from 'vue-router';
 import Edition_logs from './components/Edition_logs.vue';
 import { RouterLink } from 'vue-router';
+import GreatDialog from './components/GreatDialog.vue'
+
+
 
 onMounted(() => {
   const router = useRouter()
   const urlParams = new URLSearchParams(window.location.search)
   const refresh = urlParams.get('refresh')
-  
+
   if (refresh) {
     router.push(decodeURIComponent(refresh))
   }
-  
+
 })
 
 // import { useEventListener } from '@vueuse/core'
 
-var errorinfo = ref('错误信息：\n')
-var info = ref(' 一些信息')
-var EL = ref<string>('')
-
-// 添加NLVersion响应式变量
-const NLVersion = ref<string>('')
-
-// 添加获取NLVersion的方法
-const get_NLVersion = async () => {
-  try {
-    info.value = ' 正在获取NL版本'
-    const response = await fetch('http://localhost:23104/GetNowUseNLV/', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    const data = await response.json()
-    if (response.ok) {
-      NLVersion.value = data.version || '未知版本'
-      info.value = ' 获取NL版本成功'
-    } else {
-      throw new Error(`HTTP error! status: ${response.status}`)
+const errorinfo = ref('错误信息：\n')
+const info = ref(' 一些信息')
+const EL = ref<string>('')
+const greatDialog = ref<InstanceType<typeof GreatDialog>>(GreatDialog)
+// 创建全局可访问的状态对象
+const globalState = reactive({
+  info: info,
+  errorinfo: errorinfo,
+  updateInfo: (newInfo: string) => {
+    info.value = newInfo;
+  },
+  updateErrorInfo: (newErrorInfo: string) => {
+    errorinfo.value = newErrorInfo;
+  },
+  appendErrorInfo: (newErrorInfo: string) => {
+    errorinfo.value += newErrorInfo;
+  },
+  updateIsChinaUser: (newIsChinaUser: boolean) => {
+    window.IsChinaUser = newIsChinaUser;
+  },
+  GetIsChinaUser: async () => {
+    try {
+      const response = await fetch('http://localhost:23104/Get_is_china_user', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      if (response.ok) {
+        const data = await response.json()
+        globalState.updateIsChinaUser(data.IsChinaUser)
+      } else {
+        let errorMessage = '';
+        switch (response.status) {
+          case 1001:
+            errorMessage = '操作被取消';
+            break;
+          case 1002:
+            errorMessage = '已存在';
+            break;
+          case 1003:
+            errorMessage = '请求的资源不存在';
+            break;
+          case 500:
+            errorMessage = '服务器发生错误';
+            break;
+          default:
+            errorMessage = `HTTP error! status: ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+    } catch (error: unknown) {
+      // 类型检查
+      if (error instanceof Error) {
+        errorinfo.value += `获取用户是否在中国内地失败: ${error.message}。请复制内容并联系管理员\n`
+        errorinfo.value += `详细错误: ${error.message} ${error.stack} ${error.name}\n`;
+      } else {
+        errorinfo.value += `获取用户是否在中国内地失败: 未知错误。请复制内容并联系管理员`
+        errorinfo.value += `详细错误: 未知错误\n`;
+      }
+      // console.error('详细错误:', error, error_);
     }
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      errorinfo.value += `获取NL版本失败: ${error.message}。\n`
-    } else {
-      errorinfo.value += `获取NL版本失败: 未知错误。\n`
-    }
-    ReportError(error);
-  }
-}
+  },
+  greatDialog: greatDialog
+});
 
+// 将全局状态暴露到 window 对象上，供外部访问
+onMounted(() => {
+  window.appState = globalState;
+});
 const ReportError = async (error_: any) => {
   try {
-    alert(`发生错误，上报错误中：${error_}`)
+    // alert(`发生错误，上报错误中：${error_}`)
     const response = await fetch('http://localhost:23104/error', {
       method: 'POST',
       headers: {
@@ -89,9 +128,9 @@ const get_EL = async () => {
         'Content-Type': 'application/json',
       },
     })
-    
+
     const data = await response.json()
-    
+
     if (response.ok) {
       EL.value = data.Edition_logs
     } else {
@@ -105,6 +144,9 @@ const get_EL = async () => {
           break;
         case 1003:
           errorMessage = '请求的资源不存在';
+          break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
           break;
         case 500:
           errorMessage = '服务器发生错误';
@@ -150,6 +192,9 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
         case 1003:
           errorMessage = '请求的资源不存在';
           break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
         case 500:
           errorMessage = '服务器发生错误';
           break;
@@ -168,14 +213,21 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
   }
 }
 
+const route = useRoute();
+
+// 控制 nav-bar 是否显示
+const showNavBar = computed(() => {
+  return route.path !== '/Check';
+});
+
 onMounted(async () => {
   get_EL();
-  get_NLVersion();
 })
 
 </script>
 
 <template>
+  <GreatDialog ref="greatDialog"></GreatDialog>
   <!-- <div class="logo_all">
     <div class="logo_frame">
       <img src="/Images/Sign_23XR_Bigger.png" alt="Sign_23XR_Bigger.png" class="logo" />
@@ -186,66 +238,66 @@ onMounted(async () => {
   <br> -->
 
   <div class="container">
-  <div class="nav-bar">
-    <RouterLink to="/" custom v-slot="{ href, route, isActive }">
-      <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
-        <span>NeoLink 仪表盘 NeoLink Dashboard</span>
-      </a>
-    </RouterLink>
-    <RouterLink to="/Home" custom v-slot="{ href, route, isActive }">
-      <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
-        <span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32">
-            <path fill="currentColor" d="M16.612 2.214a1.01 1.01 0 0 0-1.242 0L1 13.419l1.243 1.572L4 13.621V26a2.004 2.004 0 0 0 2 2h20a2.004 2.004 0 0 0 2-2V13.63L29.757 15L31 13.428ZM18 26h-4v-8h4Zm2 0v-8a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v8H6V12.062l10-7.79l10 7.8V26Z"></path>
-          </svg>
-          主页
-        </span>
-      </a>
-    </RouterLink>
-    <RouterLink to="/Download/" custom v-slot="{ href, route, isActive }">
-      <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
-        <span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 8zM4 19h16v2H4z"></path>
-          </svg>
-          下载
-        </span>
-      </a>
-    </RouterLink>
-    <RouterLink to="/Setting/" custom v-slot="{ href, route, isActive }">
-      <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
-        <span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
-            <defs>
-              <mask id="ipTSetting0">
-                <g fill="#555" stroke="#fff" stroke-linejoin="round" stroke-width="4" data-swindex="0">
-                  <path d="M36.686 15.171a15.37 15.37 0 0 1 2.529 6.102H44v5.454h-4.785a15.37 15.37 0 0 1-2.529 6.102l3.385 3.385l-3.857 3.857l-3.385-3.385a15.37 15.37 0 0 1-6.102 2.529V44h-5.454v-4.785a15.37 15.37 0 0 1-6.102-2.529l-3.385 3.385l-3.857-3.857l3.385-3.385a15.37 15.37 0 0 1-2.529-6.102H4v-5.454h4.785a15.37 15.37 0 0 1 2.529-6.102l-3.385-3.385l3.857-3.857l3.385 3.385a15.37 15.37 0 0 1 6.102-2.529V4h5.454v4.785a15.37 15.37 0 0 1 6.102 2.529l3.385-3.385l3.857 3.857z"></path>
-                  <path d="M24 29a5 5 0 1 0 0-10a5 5 0 0 0 0 10Z"></path>
-                </g>
-              </mask>
-            </defs>
-            <path fill="currentColor" d="M0 0h48v48H0z" mask="url(#ipTSetting0)"></path>
-          </svg>
-          设置
-        </span>
-      </a>
-    </RouterLink>
-    <RouterLink to="/More/" custom v-slot="{ href, route, isActive }">
-      <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
-        <span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
-            <g fill="none">
-              <path stroke="currentColor" stroke-linejoin="round" stroke-width="4" data-swindex="0" d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z"></path>
-              <circle cx="14" cy="24" r="3" fill="currentColor"></circle>
-              <circle cx="24" cy="24" r="3" fill="currentColor"></circle>
-              <circle cx="34" cy="24" r="3" fill="currentColor"></circle>
-            </g>
-          </svg>
-          更多
-        </span>
-      </a>
-    </RouterLink>
-  </div>
+    <div v-if="showNavBar" class="nav-bar">
+      <RouterLink to="/" custom v-slot="{ href, route, isActive }">
+        <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
+          <span>NeoLink 仪表盘 NeoLink Dashboard</span>
+        </a>
+      </RouterLink>
+      <RouterLink to="/Home" custom v-slot="{ href, route, isActive }">
+        <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
+          <span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32">
+              <path fill="currentColor" d="M16.612 2.214a1.01 1.01 0 0 0-1.242 0L1 13.419l1.243 1.572L4 13.621V26a2.004 2.004 0 0 0 2 2h20a2.004 2.004 0 0 0 2-2V13.63L29.757 15L31 13.428ZM18 26h-4v-8h4Zm2 0v-8a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v8H6V12.062l10-7.79l10 7.8V26Z"></path>
+            </svg>
+            主页
+          </span>
+        </a>
+      </RouterLink>
+      <RouterLink to="/Download/" custom v-slot="{ href, route, isActive }">
+        <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
+          <span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 8zM4 19h16v2H4z"></path>
+            </svg>
+            下载
+          </span>
+        </a>
+      </RouterLink>
+      <RouterLink to="/Setting/" custom v-slot="{ href, route, isActive }">
+        <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
+          <span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+              <defs>
+                <mask id="ipTSetting0">
+                  <g fill="#555" stroke="#fff" stroke-linejoin="round" stroke-width="4" data-swindex="0">
+                    <path d="M36.686 15.171a15.37 15.37 0 0 1 2.529 6.102H44v5.454h-4.785a15.37 15.37 0 0 1-2.529 6.102l3.385 3.385l-3.857 3.857l-3.385-3.385a15.37 15.37 0 0 1-6.102 2.529V44h-5.454v-4.785a15.37 15.37 0 0 1-6.102-2.529l-3.385 3.385l-3.857-3.857l3.385-3.385a15.37 15.37 0 0 1-2.529-6.102H4v-5.454h4.785a15.37 15.37 0 0 1 2.529-6.102l-3.385-3.385l3.857-3.857l3.385 3.385a15.37 15.37 0 0 1 6.102-2.529V4h5.454v4.785a15.37 15.37 0 0 1 6.102 2.529l3.385-3.385l3.857 3.857z"></path>
+                    <path d="M24 29a5 5 0 1 0 0-10a5 5 0 0 0 0 10Z"></path>
+                  </g>
+                </mask>
+              </defs>
+              <path fill="currentColor" d="M0 0h48v48H0z" mask="url(#ipTSetting0)"></path>
+            </svg>
+            设置
+          </span>
+        </a>
+      </RouterLink>
+      <RouterLink to="/More/" custom v-slot="{ href, route, isActive }">
+        <a :href="href" :class="{ 'nav-item': true, 'active': isActive }">
+          <span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+              <g fill="none">
+                <path stroke="currentColor" stroke-linejoin="round" stroke-width="4" data-swindex="0" d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z"></path>
+                <circle cx="14" cy="24" r="3" fill="currentColor"></circle>
+                <circle cx="24" cy="24" r="3" fill="currentColor"></circle>
+                <circle cx="34" cy="24" r="3" fill="currentColor"></circle>
+              </g>
+            </svg>
+            更多
+          </span>
+        </a>
+      </RouterLink>
+    </div>
 
     <RouterView />
 
@@ -268,12 +320,13 @@ body {
   background-color: #181818;
   margin: 0;
   min-height: 100vh;
-  font-family: 'SmileySans';
+  font-family: 'SmileySans-Oblique';
 }
 .poem {
   text-align: center;
   margin-top: 20px;
   padding: 20px;
+  color: transparent;
 }
 
 .poem-line, .poem-line2 {
@@ -281,6 +334,7 @@ body {
   font-size: 14px;
   /* display: inline-block; */
   display: block;
+  color: transparent;
 }
 
 .poem-line {

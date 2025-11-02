@@ -11,10 +11,19 @@ dependencies = [
     "pywebview>=5.4",
     "pyyaml>=6.0.2",
     "requests>=2.32.4",
+    "scapy>=2.6.1",
     "semantic-version>=2.10.0",
+    "sv-cannopatch",
+    "winotify>=1.1.0",
 ]
 
 [dependency-groups]
 build = [
     "pyinstaller>=6.15.0",
 ]
+dev = [
+    "gunicorn>=23.0.0",
+]
+
+[tool.uv.sources]
+sv-cannopatch = { path = "../SV_CanNoPatch/dist/sv_cannopatch-0.1.0-py3-none-any.whl" }

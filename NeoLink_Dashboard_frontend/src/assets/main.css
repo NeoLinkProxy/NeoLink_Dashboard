@@ -1,14 +1,16 @@
 @import './base.css';
 
-@font-face {
-  font-family: 'SmileySans';
+/* @font-face {
+  font-family: 'SmileySans-Oblique';
   src: url('/SmileySans-Oblique.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: 'SarasaMonoSC';
-  src: url('/SarasaMonoSC-ExtraLightItalic.ttf') format('truetype');
-}
+  font-family: 'SarasaMonoSC-ExtraLightItalic';
+  src: url('/SarasaMonoSC-ExtraLightItalic-ExtraLightItalic.ttf') format('truetype');
+} */
+@import '/fonts/sliced/SmileySans/font.css';
+@import '/fonts/sliced/SarasaMonoSC/font.css';
 
 #app {
   max-width: 1280px;
@@ -21,16 +23,20 @@ body {
   background-color: #181818;
   margin: 0;
   min-height: 100vh;
-  font-family: 'SmileySans';
+  font-family: 'SmileySans-Oblique';
 }
 
 * {
   color: #717171;
-  font-family: 'SmileySans';
+  font-family: 'SmileySans-Oblique';
 }
 
 * {
   color: #717171;
+}
+
+.none {
+  display: none;
 }
 
 button {

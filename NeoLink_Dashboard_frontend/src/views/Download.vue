@@ -2,11 +2,10 @@
 import { ref, onMounted } from 'vue'
 import Edition_logs from '../components/Edition_logs.vue';
 import { RouterLink } from 'vue-router';
+import { openInBrowser, ReportError, showSponsorDialog } from '../tools/tools.ts'
 
-var errorinfo = ref('错误信息：\n')
-var info = ref(' 一些信息')
-var version = ref<string>('')
-var EL = ref<string>('')
+const version = ref<string>('')
+const EL = ref<string>('')
 
 // 添加NLVersion响应式变量
 const NLVersion = ref<string>('')
@@ -14,7 +13,7 @@ const NLVersion = ref<string>('')
 // 添加获取NLVersion的方法
 const get_NLVersion = async () => {
   try {
-    info.value = ' 正在获取NL版本'
+    window.appState?.updateInfo(' 正在获取NL版本')
     const response = await fetch('http://localhost:23104/GetNowUseNLV/', {
       method: 'GET',
       headers: {
@@ -24,15 +23,15 @@ const get_NLVersion = async () => {
     const data = await response.json()
     if (response.ok) {
       NLVersion.value = data.version || '未知版本'
-      info.value = ' 获取NL版本成功'
+      window.appState?.updateInfo(' 获取NL版本成功')
     } else {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `获取NL版本失败: ${error.message}。\n`
+      window.appState?.appendErrorInfo(`获取NL版本失败: ${error.message}。\n`)
     } else {
-      errorinfo.value += `获取NL版本失败: 未知错误。\n`
+      window.appState?.appendErrorInfo(`获取NL版本失败: 未知错误。\n`)
     }
     ReportError(error);
   }
@@ -40,7 +39,7 @@ const get_NLVersion = async () => {
 
 const get_version = async () => {
   try {
-    info.value = ' 正在获取版本'
+    window.appState?.updateInfo(' 正在获取版本')
     const response = await fetch('http://localhost:23104/version', {
       method: 'GET',
       headers: {
@@ -56,47 +55,85 @@ const get_version = async () => {
   } catch (error: unknown) {
     // 类型检查
     if (error instanceof Error) {
-      errorinfo.value += `获取版本失败: ${error.message}。\n`
+      window.appState?.appendErrorInfo(`获取版本失败: ${error.message}。\n`)
     } else {
-      errorinfo.value += `获取版本失败: 未知错误。\n`
+      window.appState?.appendErrorInfo(`获取版本失败: 未知错误。\n`)
     }
     ReportError(error);
   }
 }
 
-const ReportError = async (error_: any) => {
-  try {
-    alert(`发生错误，上报错误中：${error_}`)
-    const response = await fetch('http://localhost:23104/error', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: error_.message,
-        stack: error_.stack,
-        name: error_.name,
-        timestamp: new Date().toISOString()
-      }),
-    });
-  } catch (error: unknown) {
-    // 类型检查
-    if (error instanceof Error) {
-      errorinfo.value += `上报错误失败: ${error.message}。请复制内容并联系管理员\n`
-      errorinfo.value += `详细错误: ${error_.message} ${error_.stack} ${error_.name} ${error_.message} ${error_.stack} ${error_.name}\n`;
-    } else {
-      errorinfo.value += `上报错误失败: 未知错误。请复制内容并联系管理员`
-      errorinfo.value += `详细错误: 未知错误 ${error_.message} ${error_.stack} ${error_.name} ${error_.message} ${error_.stack} ${error_.name}\n`;
+const showDialog1 = async () => {
+  let name = ''
+  let h1 = document.createElement('h1')
+  h1.innerText = '输入要下载的 NeoLink 的名字'
+  // let p = document.createElement('p')
+  let input = document.createElement('input')
+  input.type = 'text'
+  input.placeholder = '请输入版本名称'
+
+  let from = document.createElement('form')
+  from.onsubmit = (e) => {
+    e.preventDefault()
+    name = input.value
+    if (name) {
+      // 关闭对话框
+      window.appState?.greatDialog?.closeDialog()
     }
-    // console.error('详细错误:', error, error_);
   }
+
+  // p.innerText = '暂时没有 赞助 页面 （悲）'
+  from.appendChild(input)
+  document.getElementById('greatDialogContent')?.appendChild(h1)
+  // document.getElementById('greatDialogContent')?.appendChild(p)
+  document.getElementById('greatDialogContent')?.appendChild(from)
+  document.getElementById('greatDialogCloseButton')?.classList.add('none')
+
+  // 获取 GreatDialog 组件实例
+  const greatDialogInstance = window.appState?.greatDialog
+
+  // 创建 Promise 来异步等待 close 事件
+  const closePromise = new Promise<string>((resolve) => {
+    if (greatDialogInstance) {
+      // 监听一次 close 事件
+      const handleDialogClose = () => {
+        document.getElementById('greatDialogContent')?.removeChild(h1)
+        // document.getElementById('greatDialogContent')?.removeChild(p)
+        document.getElementById('greatDialogContent')?.removeChild(from)
+        document.getElementById('greatDialogCloseButton')?.classList.remove('none')
+        resolve(name)
+      }
+
+      // 使用正确的事件监听方式
+      const handler = () => {
+        handleDialogClose()
+        // 清理事件监听器
+        if (greatDialogInstance.$el) {
+          greatDialogInstance.$el.removeEventListener('close', handler)
+        }
+      }
+
+      if (greatDialogInstance.$el) {
+        greatDialogInstance.$el.addEventListener('close', handler)
+      }
+    }
+  })
+
+  // 显示对话框
+  greatDialogInstance?.showAlert()
+
+  // 异步等待对话框关闭
+  return await closePromise
 }
 
-// 新增：获取支持的版本列表
-const supportedVersions = ref<string[]>([]);
+// const supportedVersions = ref<string[]>([]);
+const supportedVersionsList = ref<string[]>([]); // 添加版本列表响应式变量
+const loadingSupportedVersions = ref<boolean>(true); // 添加加载状态
+
 const getSupportedVersions = async () => {
   try {
-    info.value = ' 正在获取支持的版本列表'
+    loadingSupportedVersions.value = true; // 开始加载
+    window.appState?.updateInfo(' 正在获取支持的版本列表')
     const response = await fetch('http://localhost:23104/GetSupportedVersions/', {
       method: 'GET',
       headers: {
@@ -105,18 +142,22 @@ const getSupportedVersions = async () => {
     })
     const data = await response.json()
     if (response.ok) {
-      supportedVersions.value = data.versions || [];
-      info.value = ' 获取支持的版本列表成功'
+      // supportedVersions.value = data.Versions || [];
+      supportedVersionsList.value = data.VersionsList || [];
+      // console.log(data.Versions)
+      window.appState?.updateInfo(' 获取支持的版本列表成功')
     } else {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `获取支持的版本列表失败: ${error.message}。\n`
+      window.appState?.appendErrorInfo(`获取支持的版本列表失败: ${error.message}。\n`)
     } else {
-      errorinfo.value += `获取支持的版本列表失败: 未知错误。\n`
+      window.appState?.appendErrorInfo(`获取支持的版本列表失败: 未知错误。\n`)
     }
     ReportError(error);
+  } finally {
+    loadingSupportedVersions.value = false; // 加载完成
   }
 }
 
@@ -128,9 +169,9 @@ const get_EL = async () => {
         'Content-Type': 'application/json',
       },
     })
-    
+
     const data = await response.json()
-    
+
     if (response.ok) {
       EL.value = data.Edition_logs
     } else {
@@ -145,6 +186,9 @@ const get_EL = async () => {
         case 1003:
           errorMessage = '请求的资源不存在';
           break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
         case 500:
           errorMessage = '服务器发生错误';
           break;
@@ -155,9 +199,64 @@ const get_EL = async () => {
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `获取版本日志失败: ${error.message}。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`获取版本日志失败: ${error.message}。等待上报错误。\n`)
     } else {
-      errorinfo.value += `获取版本日志失败: 未知错误。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`获取版本日志失败: 未知错误。等待上报错误。\n`)
+    }
+    ReportError(error);
+  }
+}
+
+const downloadNeoLink = async (version: string) => {
+  // console.log(name)
+  let name = await showDialog1()
+  console.log(name)
+  // text
+  try {
+    const response = await fetch('http://localhost:23104/DownloadNeoLink/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: version,
+        name: name,
+      })
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      // EL.value = data.Edition_logs
+      console.log(data)
+    } else {
+      let errorMessage = '';
+      switch (response.status) {
+        case 1001:
+          errorMessage = '操作被取消';
+          break;
+        case 1002:
+          errorMessage = '已存在';
+          break;
+        case 1003:
+          errorMessage = '请求的资源不存在';
+          break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
+        case 500:
+          errorMessage = '服务器发生错误';
+          break;
+        default:
+          errorMessage = `HTTP error! status: ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      window.appState?.appendErrorInfo(`获取版本日志失败: ${error.message}。等待上报错误。\n`)
+    } else {
+      window.appState?.appendErrorInfo(`获取版本日志失败: 未知错误。等待上报错误。\n`)
     }
     ReportError(error);
   }
@@ -189,6 +288,9 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
         case 1003:
           errorMessage = '请求的资源不存在';
           break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
         case 500:
           errorMessage = '服务器发生错误';
           break;
@@ -199,19 +301,20 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `发送弹窗失败: ${error.message}。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`发送弹窗失败: ${error.message}。等待上报错误。\n`)
     } else {
-      errorinfo.value += `发送弹窗失败: 未知错误。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`发送弹窗失败: 未知错误。等待上报错误。\n`)
     }
     ReportError(error);
   }
 }
 
 onMounted(async () => {
+  window.appState?.GetIsChinaUser()
   get_EL();
   get_version();
   get_NLVersion();
-  getSupportedVersions(); // 添加获取支持版本的调用
+  getSupportedVersions();
 })
 </script>
 
@@ -222,14 +325,23 @@ onMounted(async () => {
       <div class="version-info">
         <div class="version-title">NeoLink</div>
         <div class="version-desc">一款内网穿透软件，专为 Minecraft 联机 / Server 而生。<br>
-          NeoLink下载地址：<a href="https://github.com/NeoLinkProxy/NeoLink">https://github.com/NeoLinkProxy/NeoLink</a><br>
-          本GUI支持的版本：NeoLink >= 3.2</div>
+          NeoLink下载地址：<div style="display: inline;" @click="openInBrowser('https://github.com/NeoLinkProxy/NeoLink')">https://github.com/NeoLinkProxy/NeoLink</div><br>
+          本GUI支持的版本：NeoLink >= 4.7.1<br>
+          <ol>
+            <div class="title">提示：</div>
+            <li>本 GUI 与 NeoLink 并无直接关系！</li>
+            <li>官方服务器提供的序列号付费，但是带宽较多（免费的流量用完就结束了）</li>
+          </ol>
+        </div>
       </div>
-      
+
       <div class="versions-list">
         <div class="list-title">可用版本列表：</div>
-        <div v-if="supportedVersions.length > 0" class="version-items">
-          <div v-for="(versionItem, index) in supportedVersions" :key="index" class="version-item">
+        <div v-if="loadingSupportedVersions" class="loading">
+          加载中...
+        </div>
+        <div v-else-if="supportedVersionsList.length > 0" class="version-items">
+          <div v-for="(versionItem, index) in supportedVersionsList" class="version-item" @click="downloadNeoLink(versionItem)" :key="index">
             NeoLink 版本 {{ versionItem }}
           </div>
         </div>
@@ -243,6 +355,26 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+ol {
+  color: #aaa;
+  padding: 0px 0px 0px 3em;
+}
+
+ol .title {
+  color: #aaa;
+  margin: 0px 0px 0px -3em;
+}
+
+li {
+  color: #aaa;
+}
+
+.loading {
+  color: #aaa;
+  text-align: center;
+  padding: 20px;
+}
+
 .logo {
   /* 330px X 200px */
   width: calc(330px * 0.4);

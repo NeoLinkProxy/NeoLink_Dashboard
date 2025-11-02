@@ -3,143 +3,11 @@
 import { ref, onMounted } from 'vue'
 import Edition_logs from '../components/Edition_logs.vue';
 import { RouterLink } from 'vue-router';
-
-var errorinfo = ref('错误信息：\n')
-var info = ref(' 一些信息')
-var version = ref<string>('')
-var EL = ref<string>('')
-
-// 添加NLVersion响应式变量
-const NLVersion = ref<string>('')
+import { ReportError } from '../tools/tools.ts'
 
 const theme = ref<string>('dark');
 const language = ref<string>('zh-CN');
 const autoUpdateCheck = ref<boolean>(true);
-
-// 添加获取NLVersion的方法
-const get_NLVersion = async () => {
-  try {
-    info.value = ' 正在获取NL版本'
-    const response = await fetch('http://localhost:23104/GetNowUseNLV/', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    const data = await response.json()
-    if (response.ok) {
-      NLVersion.value = data.version || '未知版本'
-      info.value = ' 获取NL版本成功'
-    } else {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      errorinfo.value += `获取NL版本失败: ${error.message}。\n`
-    } else {
-      errorinfo.value += `获取NL版本失败: 未知错误。\n`
-    }
-    ReportError(error);
-  }
-}
-
-const get_version = async () => {
-  try {
-    info.value = ' 正在获取版本'
-    const response = await fetch('http://localhost:23104/version', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    const data = await response.json()
-    if (response.ok) {
-      version.value = data.version
-    } else {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-  } catch (error: unknown) {
-    // 类型检查
-    if (error instanceof Error) {
-      errorinfo.value += `获取版本失败: ${error.message}。\n`
-    } else {
-      errorinfo.value += `获取版本失败: 未知错误。\n`
-    }
-    ReportError(error);
-  }
-}
-
-const ReportError = async (error_: any) => {
-  try {
-    alert(`发生错误，上报错误中：${error_}`)
-    const response = await fetch('http://localhost:23104/error', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: error_.message,
-        stack: error_.stack,
-        name: error_.name,
-        timestamp: new Date().toISOString()
-      }),
-    });
-  } catch (error: unknown) {
-    // 类型检查
-    if (error instanceof Error) {
-      errorinfo.value += `上报错误失败: ${error.message}。请复制内容并联系管理员\n`
-      errorinfo.value += `详细错误: ${error_.message} ${error_.stack} ${error_.name} ${error_.message} ${error_.stack} ${error_.name}\n`;
-    } else {
-      errorinfo.value += `上报错误失败: 未知错误。请复制内容并联系管理员`
-      errorinfo.value += `详细错误: 未知错误 ${error_.message} ${error_.stack} ${error_.name} ${error_.message} ${error_.stack} ${error_.name}\n`;
-    }
-    // console.error('详细错误:', error, error_);
-  }
-}
-
-
-const get_EL = async () => {
-  try {
-    const response = await fetch('http://localhost:23104/Edition_logs', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    const data = await response.json()
-    
-    if (response.ok) {
-      EL.value = data.Edition_logs
-    } else {
-      let errorMessage = '';
-      switch (response.status) {
-        case 1001:
-          errorMessage = '操作被取消';
-          break;
-        case 1002:
-          errorMessage = '已存在';
-          break;
-        case 1003:
-          errorMessage = '请求的资源不存在';
-          break;
-        case 500:
-          errorMessage = '服务器发生错误';
-          break;
-        default:
-          errorMessage = `HTTP error! status: ${response.status}`;
-      }
-      throw new Error(errorMessage);
-    }
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      errorinfo.value += `获取版本日志失败: ${error.message}。等待上报错误。\n`
-    } else {
-      errorinfo.value += `获取版本日志失败: 未知错误。等待上报错误。\n`
-    }
-    ReportError(error);
-  }
-}
 
 const SendPopup = async (title: string, message: string, type: 'info' | 'warning' | 'error') => {
   try {
@@ -167,6 +35,9 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
         case 1003:
           errorMessage = '请求的资源不存在';
           break;
+        case 1004:
+          errorMessage = '传递的信息不符合规范';
+          break;
         case 500:
           errorMessage = '服务器发生错误';
           break;
@@ -177,18 +48,16 @@ const SendPopup = async (title: string, message: string, type: 'info' | 'warning
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      errorinfo.value += `发送弹窗失败: ${error.message}。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`发送弹窗失败: ${error.message}。等待上报错误。\n`)
     } else {
-      errorinfo.value += `发送弹窗失败: 未知错误。等待上报错误。\n`
+      window.appState?.appendErrorInfo(`发送弹窗失败: 未知错误。等待上报错误。\n`)
     }
     ReportError(error);
   }
 }
 
 onMounted(async () => {
-  get_EL();
-  get_version();
-  get_NLVersion();
+  window.appState?.GetIsChinaUser()
 })
 
 </script>
@@ -667,7 +536,7 @@ onMounted(async () => {
 .section-title {
   font-weight: bold;
   font-size: 1.2em;
-  color: #4CAF50;
+  color: #285c2a;
   margin-bottom: 15px;
 }
 
@@ -697,7 +566,7 @@ onMounted(async () => {
   border: 1px solid #444;
   border-radius: 4px;
   background-color: #3a3a3a;
-  color: #5e5e5e;
+  color: #888888;
 }
 
 .item-value select:focus {
@@ -718,30 +587,32 @@ onMounted(async () => {
 .save-button {
   padding: 10px 20px;
   font-size: 16px;
-  background-color: #4CAF50;
+  background-color: #347938ce;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  /* opacity: 0.5; */
 }
 
 .save-button:hover {
-  background-color: #459e48;
+  background-color: #2a5f2c85;
 }
 
 .reset-button {
   padding: 10px 20px;
   font-size: 16px;
-  background-color: #f44336;
+  background-color: #5f1b16ce;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  /* opacity: 0.5; */
 }
 
 .reset-button:hover {
-  background-color: #d32f2f;
+  background-color: #3f0e0e85;
 }
 </style>
